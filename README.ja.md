@@ -147,8 +147,8 @@ mapimggen.exe -type <world|dungeon|cave|town|village|castle> [オプション]
 | オプション | 説明 | デフォルト |
 |---|---|---|
 | `-type <world\|dungeon\|cave\|town\|village\|castle>` | マップ種別 | `world` |
-| `-w <幅>` | 幅（ピクセル）。範囲: 64–1024 | world:256 / dungeon,cave,town,castle:160 |
-| `-d <高さ>` | 高さ（ピクセル）。範囲: 64–1024 | world:256 / dungeon,cave,town,castle:160 |
+| `-w <幅>` | 幅（ピクセル）。範囲: 64–1024 | world:256 / dungeon,cave,town,village,castle:160 |
+| `-d <高さ>` | 高さ（ピクセル）。範囲: 64–1024 | world:256 / dungeon,cave,town,village,castle:160 |
 | `-seed <数値>` | 乱数シード（再現用） | ランダム |
 | `-dir <ディレクトリ>` | 出力先ディレクトリ | `.`（カレント） |
 | `-out <ファイル名>` | 出力ファイル名（拡張子不要） | `out` |

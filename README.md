@@ -147,8 +147,8 @@ mapimggen.exe -type <world|dungeon|cave|town|village|castle> [options]
 | Option | Description | Default |
 |---|---|---|
 | `-type <world\|dungeon\|cave\|town\|village\|castle>` | Map type | `world` |
-| `-w <width>` | Width in pixels. Range: 64–1024 | world:256 / dungeon,cave,town,castle:160 |
-| `-d <depth>` | Height in pixels. Range: 64–1024 | world:256 / dungeon,cave,town,castle:160 |
+| `-w <width>` | Width in pixels. Range: 64–1024 | world:256 / dungeon,cave,town,village,castle:160 |
+| `-d <depth>` | Height in pixels. Range: 64–1024 | world:256 / dungeon,cave,town,village,castle:160 |
 | `-seed <number>` | Random seed (for reproducibility) | Random |
 | `-dir <directory>` | Output directory | `.` (current directory) |
 | `-out <filename>` | Output filename (no extension) | `out` |

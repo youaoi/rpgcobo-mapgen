@@ -559,7 +559,7 @@ bool WritePlanFile(const std::filesystem::path& path, const MapPlan& plan, const
             for (std::size_t parentIndexCandidate = 0; parentIndexCandidate < plan.regions.size(); ++parentIndexCandidate) {
                 const MapPlanRegion& parent = plan.regions[parentIndexCandidate];
                 if (parent.id == region.id && parent.kind == region.kind) continue;
-                const bool eligible = plan.type == "town"
+                const bool eligible = plan.type == "town" || plan.type == "village"
                     ? (parent.kind == "town_footprint" || parent.kind == "district" || parent.kind == "plaza")
                     : (parent.kind == "fortress" || parent.kind == "outer_bailey" || parent.kind == "inner_ward" || parent.kind == "keep");
                 if (!eligible || !containsRegionCenter(parent, region)) continue;

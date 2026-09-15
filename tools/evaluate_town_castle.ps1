@@ -5,6 +5,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($SeedCount -le 0) {
+    throw "SeedCount must be positive: $SeedCount"
+}
 $repoRoot = Split-Path -Parent $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($Exe)) {
     $Exe = Join-Path $repoRoot "build\Release\mapimggen.exe"

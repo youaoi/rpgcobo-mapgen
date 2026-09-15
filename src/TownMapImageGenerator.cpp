@@ -746,7 +746,7 @@ bool TownMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError) {
         }
         const bool urban = !villageLayout && mode != TownMode::Village;
         MapPlan candidate;
-        candidate.Reset(width, height, params_.seed, "town");
+        candidate.Reset(width, height, params_.seed, villageLayout ? "village" : "town");
         candidate.archetype = TownModeName(mode);
         candidate.cityType = villageLayout ? "village" : TownCityTypeName(cityType);
         candidate.plazaEnabled = std::uniform_real_distribution<double>(0.0, 1.0)(rng) < plazaChance;

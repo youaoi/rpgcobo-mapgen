@@ -70,4 +70,6 @@ foreach ($file in $files) {
     ++$validated
 }
 
+if ($validated -eq 0) { throw "No town or village plans were validated: $PlanPath" }
+
 "LIFE_VALIDATION: PASS files=$validated"

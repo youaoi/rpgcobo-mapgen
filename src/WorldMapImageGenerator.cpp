@@ -2798,7 +2798,7 @@ bool WorldMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError) {
             }
         }
         for (std::uint8_t biome : outBiomes) {
-            if (biome != SEA) ++landCells;
+            if (!IsWater(biome)) ++landCells;
         }
 
         if (landCells < minLandCells) {
@@ -2812,7 +2812,8 @@ bool WorldMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError) {
                     for (int oy = -1; oy <= 1; ++oy) {
                         for (int ox = -1; ox <= 1; ++ox) {
                             if (ox == 0 && oy == 0) continue;
-                            if (outBiomes[static_cast<std::size_t>(Index(x + ox, y + oy, w))] != SEA) ++adjacentLand;
+                            const std::uint8_t adjacentBiome = outBiomes[static_cast<std::size_t>(Index(x + ox, y + oy, w))];
+                            if (!IsWater(adjacentBiome)) ++adjacentLand;
                         }
                     }
                     candidates.push_back({adjacentLand, cell});
