@@ -498,7 +498,7 @@ bool WritePlanFile(const std::filesystem::path& path, const MapPlan& plan, const
     };
     const auto markerRegionMatches = [&](const MapPlanMarker& marker, const MapPlanRegion& region) {
         if (!markerInsideRegion(marker, region)) return false;
-        if (plan.type == "town") {
+        if (plan.type == "town" || plan.type == "village") {
             return (marker.kind == "building_door" || marker.kind == "landmark") &&
                 (region.kind == "building" || region.kind == "market" || region.kind == "plaza");
         }

@@ -24,7 +24,7 @@ New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
 $summary = @()
 foreach ($type in @("town", "village", "castle")) {
     foreach ($size in $Sizes) {
-        if ($size -lt 48) {
+        if ($size -lt 64) {
             throw "Size $size is below the minimum supported town/castle size"
         }
         $directory = Join-Path $OutputRoot ("{0}_{1}" -f $type, $size)

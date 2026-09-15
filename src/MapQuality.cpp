@@ -751,10 +751,11 @@ MapQualityMetrics EvaluateMapQuality(const MapPlan& plan) {
                 if (IsWalkable(plan.type, plan.biomes[i])) { firstWalkable = i; break; }
             }
         }
-        std::queue<int> pending;
-        pending.push(firstWalkable);
-        reachable[static_cast<std::size_t>(firstWalkable)] = 1;
-        while (!pending.empty()) {
+        if (firstWalkable >= 0) {
+            std::queue<int> pending;
+            pending.push(firstWalkable);
+            reachable[static_cast<std::size_t>(firstWalkable)] = 1;
+            while (!pending.empty()) {
             const int current = pending.front();
             pending.pop();
             const int cx = current % plan.width;
@@ -771,6 +772,7 @@ MapQualityMetrics EvaluateMapQuality(const MapPlan& plan) {
                     reachable[static_cast<std::size_t>(next)] = 1;
                     pending.push(next);
                 }
+            }
             }
         }
         for (const MapPlanMarker& marker : plan.markers) {
