@@ -15,12 +15,14 @@ int main(){try {
         for(int y=2;y<78;++y)for(int x=38;x<=41;++x)base.biomes[y*80+x]=5;
         base.regions.push_back({"asset_plot",0,25,25,35,35});
         base.regions.push_back({"village_open_space",1,15,45,30,60});
+        base.regions.back().growthStage=3;
         base.markers.push_back({"asset_approach",38,30,0});
         // Wet banks and undeveloped land must stay bare, even beside roads.
         for(int y=2;y<15;++y)for(int x=35;x<=44;++x)base.shoreCuts[y*80+x]=1;
         for(int y=65;y<78;++y)for(int x=35;x<=44;++x)base.settlementMask[y*80+x]=0;
         auto poor=base,middle=base,rich=base;
         ApplySettlementDecoration(poor,.7);ApplySettlementDecoration(middle,1.5);ApplySettlementDecoration(rich,2.5);
+        Require(rich.regions[1].growthStage==3,"Garden style replaced the exported growth stage");
         const auto a=Flowers(poor),b=Flowers(middle),c=Flowers(rich);
         Require(a.empty()&&b.size()>10&&c.size()>b.size(),"Wealth did not increase flowers");
         auto threshold=base;

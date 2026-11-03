@@ -676,6 +676,10 @@ int main(int argc, char** argv) {
     params.seed = opt.seed;
     params.extra = opt.extra;
     const bool foundation = params.extra.count("assetFoundation") && params.extra.at("assetFoundation") > 0;
+    if (foundation && opt.type != "village" && opt.type != "town" && opt.type != "castle") {
+        std::cerr << "Argument error: assetFoundation requires village, town or castle\n";
+        return 1;
+    }
     if (foundation && opt.type == "castle" && params.extra.count("wallHeight") && params.extra.at("wallHeight")<=0) {
         params.extra["outerWallDefenseStrength"] = 0.0;
         params.extra.erase("outerDefense");

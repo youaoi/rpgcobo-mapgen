@@ -79,7 +79,8 @@ for(const r of clearances)for(const f of fixtures){
 const audience=clearances.filter(r=>r.role==='audience_space');assert.equal(audience.length,1);
 assert(audience[0].x1-audience[0].x0+1>=10&&audience[0].y1-audience[0].y0+1>=8,'Audience space is too cramped');
 const throne=fixtures.find(r=>r.role==='royal_throne'),throneRoom=p.regions[throne.parentIndex];
-assert.equal(throne.x0,Math.floor((throneRoom.x0+throneRoom.x1)/2)-1,'Throne slipped away from the ceremonial axis');
+const throneModel=db[kinds[throne.objectType]]['#'+throne.objectVariant+'#'].cols;
+assert.equal(throne.x0,Math.floor((throneRoom.x0+throneRoom.x1)/2)-Math.floor((throneModel.w-1)/2),'Throne slipped away from the ceremonial axis');
 assert(throne.y0>=throneRoom.y0+3&&audience[0].y0===throne.y1+1);
 assert(doors.some(r=>r.objectVariant===13),'Ceremonial rooms use the same plain utility door');
 assert.equal(roles.royal_throne,1);assert(roles.royal_bed||roles.garrison_bed);assert(roles.cooking_stove);assert(roles.training_dummy);

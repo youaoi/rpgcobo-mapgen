@@ -16,14 +16,14 @@ inline void ApplySettlementDecoration(MapPlan& plan,double wealth) {
     if(n<=0 || static_cast<int>(plan.biomes.size())!=n) return;
     std::vector<unsigned char> reserved(n,0),garden(n,0);
     std::vector<MapPlanRegion> lots;
-    for(auto& r:regions) {
+    for(const auto& r:regions) {
         if(r.kind=="asset_plot" || r.kind=="asset_bridge" || r.kind=="asset_wall" || r.kind=="settlement_facility") {
             for(int y=std::max(0,r.y0-2);y<=std::min(d-1,r.y1+2);++y)
                 for(int x=std::max(0,r.x0-2);x<=std::min(w-1,r.x1+2);++x)reserved[y*w+x]=1;
         }
         if(r.kind=="village_open_space") {
-            r.growthStage=static_cast<int>((plan.seed+static_cast<unsigned>(r.id)*2654435761U)%4);
             lots.push_back(r);
+            lots.back().growthStage=static_cast<int>((plan.seed+static_cast<unsigned>(r.id)*2654435761U)%4);
             for(int y=r.y0+1;y<r.y1;++y)for(int x=r.x0+1;x<r.x1;++x) {
                 garden[y*w+x]=r.role=="park";
                 if(r.role=="farm")reserved[y*w+x]=1;

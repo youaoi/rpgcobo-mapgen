@@ -50,7 +50,10 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
         std::stable_sort(mayorAssets.begin(),mayorAssets.end(),[](const auto&a,const auto&b){return a.w*a.d>b.w*b.d;});
         if(mayorAssets.empty()){error="Wealth 2.0 requires a large residential asset with a south-facing exterior door";return false;}
     }
-    const bool frontOnlyBuildings=sideKeep==0 || std::all_of(assets.begin(),assets.end(),[](const auto&a){return a.side==0||SettlementBuildingFrontOnly(a.w,a.d);});
+    const bool frontOnlyBuildings = sideKeep == 0 ||
+        std::all_of(assets.begin(), assets.end(), [](const auto& asset) {
+            return asset.side == 0 || asset.side == 2;
+        });
     std::shuffle(assets.begin(),assets.end(),rng);
     // Include compact alternatives in the candidate search, so an early
     // large manor cannot consume all frontage needed by the requested homes.
@@ -164,15 +167,6 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
                 if(!inPlaza(xx,yy))plan.biomes[yy*w+xx]=ROAD;
             }
         }
-    }
-    // Reserve the castle gate connection before houses and gardens consume frontage.
-    if(params.extra.count("castleTownGateX") && params.extra.count("castleTownGateY")) {
-        const int gx=get("castleTownGateX",center.x)-middleWidth/2,gy=get("castleTownGateY",center.y);
-        const int cx=center.x-middleWidth/2,cy=center.y-middleWidth/2;
-        std::vector<Point> approach;
-        for(int y=gy;y<=cy;++y)approach.push_back({gx,y});
-        for(int x=std::min(gx,cx);x<=std::max(gx,cx);++x)approach.push_back({x,cy});
-        paint(approach,middleWidth,0);
     }
     // Build a road BEFORE any houses. Wide-road footprints are checked at
     // every search node, so a centerline cannot squeeze through a narrow gap.

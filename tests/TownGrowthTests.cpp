@@ -21,6 +21,15 @@ MapGenParams Params(int site,int arms) {
     return p;
 }
 int main(){try {
+    {
+        auto params=Params(0,2);
+        params.width=31;
+        MapPlan previous;
+        previous.Reset(64,64,1,"previous");
+        std::string error;
+        Require(!TownMapImageGenerator(params).Generate(previous,error) && previous.type=="previous",
+            "Invalid asset town dimensions reset the output plan");
+    }
     for(int site=0;site<7;++site)for(int arms:{0,2,4}) {
         auto args=Params(site,arms);MapPlan p;std::string error;TownMapImageGenerator g(args);
         Require(g.Generate(p,error),error.c_str());

@@ -107,6 +107,20 @@ int main() {
                     Require(!p.heightOffsets[y*160+x]&&!p.shoreCuts[y*160+x],"Bridge/wall setback deformed after growth");
         }
         auto p=Terrain(); auto args=Params(); args.extra["asset0Width"]=1000; args.extra["asset1Width"]=1000;
+        {
+            auto rotated=Terrain();
+            auto parameters=Params();
+            parameters.extra["asset2Width"]=9;
+            parameters.extra["asset2Depth"]=8;
+            parameters.extra["asset2Rotation"]=1;
+            std::string error;
+            Require(BuildAssetFoundation(rotated,parameters,error),error.c_str());
+            const auto bridge=std::find_if(rotated.regions.begin(),rotated.regions.end(),
+                [](const auto& r){return r.kind=="asset_bridge";});
+            Require(bridge!=rotated.regions.end() && bridge->rotation==1 &&
+                bridge->x1-bridge->x0+1==9 && bridge->y1-bridge->y0+1==8,
+                "Rotated bridge metadata differs from its footprint");
+        }
         std::string error;
         Require(!BuildAssetFoundation(p,args,error),"oversized assets were silently shrunk");
         std::cout<<"PASS asset footprints, bridge shores, optional walls, determinism and 2x2 clearance\n";

@@ -27,7 +27,7 @@ for(const r of [...homes,...lots]){
  if(side%2){sideways++;assert.notEqual(a.sideFacingHouseKeepPercent,0,'Side house retained at 0%');}
  const rx=side===1?r.x1+3:side===3?r.x0-3:r.doorX,ry=side===0?r.y0-3:side===2?r.y1+3:r.doorY;
  for(let k=0;k<2;k++)assert([5,6,14].includes(p.biomes[(ry+(side%2?k:0))*p.width+rx+(side%2?0:k)]),'Entrance misses its frontage street');
- const group=a[match+'LimitGroup'],limit=a[match+'MaxCount'];
+ const group=a[match+'LimitGroup'] ?? a[match+'Id']+1000,limit=a[match+'MaxCount'];
  if(limit>0){const count=(facilityCounts.get(group)||0)+1;facilityCounts.set(group,count);assert(count<=limit,'Unique facility count exceeded');}
 }
 const markers=p.markers.filter(m=>['asset_approach','village_center','village_open_space_approach','castle_town_connection'].includes(m.kind)||m.role==='keep_public_entry');

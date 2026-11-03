@@ -57,12 +57,13 @@ inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std:
         const auto it = params.extra.find(key);
         return it == params.extra.end() ? fallback : static_cast<int>(std::lround(it->second));
     };
-    struct Asset { int id, w, d, category; };
+    struct Asset { int id, w, d, category, rotation; };
     std::vector<Asset> assets;
     for (int i = 0; i < value("assetCount", 0); ++i) {
         const std::string key = "asset" + std::to_string(i);
-        Asset a{value(key + "Id", -1), value(key + "Width", 0), value(key + "Depth", 0), value(key + "Category", 0)};
-        if(!SettlementBuildingOrientationAllowed(a.w,a.d,value(key+"Rotation",0),value(key+"DoorSide",2),a.category))continue;
+        Asset a{value(key + "Id", -1), value(key + "Width", 0), value(key + "Depth", 0),
+            value(key + "Category", 0), value(key + "Rotation", 0)};
+        if(!SettlementBuildingOrientationAllowed(a.w,a.d,a.rotation,value(key+"DoorSide",2),a.category))continue;
         if (a.id >= 0 && a.w > 0 && a.d > 0) assets.push_back(a);
     }
     if (assets.empty()) { error = "No named construction assets found in map_asset"; return false; }
@@ -123,6 +124,7 @@ inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std:
                 plan.biomes[yy*w+xx]=BRIDGE; bridgePlot[yy*w+xx]=1;
             }
             MapPlanRegion r{"asset_bridge", a.id, x,y,x+a.w-1,y+a.d-1};
+            r.rotation = a.rotation;
             r.role="MA" + std::string(a.id<10 ? "00" : (a.id<100 ? "0" : "")) + std::to_string(a.id);
             plan.regions.push_back(r);
             done=true;
@@ -211,6 +213,7 @@ inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std:
             for (int yy = y+a.d; yy < doorY+roadWidth; ++yy) for (int dx = 0; dx < roadWidth; ++dx)
                 plan.biomes[yy*w+doorX+dx] = ROAD;
             MapPlanRegion r{"asset_plot", placed, x, y, x+a.w-1, y+a.d-1};
+            r.rotation = a.rotation;
             r.role = "MA" + std::string(a.id < 10 ? "00" : (a.id < 100 ? "0" : "")) + std::to_string(a.id);
             plan.regions.push_back(r);
             plan.markers.push_back({"asset_approach", doorX, doorY, placed});
@@ -234,6 +237,7 @@ inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std:
                 occupied[yy*w+xx]=1;
             }
             MapPlanRegion r{"asset_wall", a.id,x,y,x+a.w-1,y+a.d-1};
+            r.rotation = a.rotation;
             r.role="MA" + std::string(a.id<10 ? "00" : (a.id<100 ? "0" : "")) + std::to_string(a.id);
             plan.regions.push_back(r); done=true;
         }
