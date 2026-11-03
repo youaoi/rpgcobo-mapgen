@@ -32,7 +32,7 @@ inline void ApplySettlementShore(MapPlan& plan) {
     }
     if(!hasWater) return;
     for(const auto& r:plan.regions) {
-        if(r.kind!="asset_plot" && r.kind!="asset_bridge" && r.kind!="village_center" && r.kind!="village_open_space" && r.kind!="settlement_facility") continue;
+        if(r.kind!="asset_plot" && r.kind!="asset_bridge" && r.kind!="asset_wall" && r.kind!="village_center" && r.kind!="village_open_space" && r.kind!="settlement_facility") continue;
         for(int y=std::max(0,r.y0-2);y<=std::min(d-1,r.y1+2);++y)
             for(int x=std::max(0,r.x0-2);x<=std::min(w-1,r.x1+2);++x) protectedLand[y*w+x]=1;
     }
@@ -71,7 +71,7 @@ inline void ApplySettlementRelief(MapPlan& plan, int amplitude) {
             b == 10 || b == 11 || b == 12 || b == 14 || b == 15) protect(i);
     }
     for (const auto& r : plan.regions) {
-        if (r.kind != "asset_plot" && r.kind != "village_center" && r.kind != "village_open_space" && r.kind != "settlement_facility") continue;
+        if (r.kind != "asset_plot" && r.kind != "asset_bridge" && r.kind != "asset_wall" && r.kind != "village_center" && r.kind != "village_open_space" && r.kind != "settlement_facility") continue;
         for (int y = std::max(0, r.y0 - 2); y <= std::min(d - 1, r.y1 + 2); ++y)
             for (int x = std::max(0, r.x0 - 2); x <= std::min(w - 1, r.x1 + 2); ++x)
                 protect(y * w + x);

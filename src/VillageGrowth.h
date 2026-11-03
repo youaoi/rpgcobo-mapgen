@@ -52,6 +52,13 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
     // large manor cannot consume all frontage needed by the requested homes.
     if(attempt%3==2) std::stable_sort(assets.begin(),assets.end(),[](const Asset& a,const Asset& b){return a.w*a.d<b.w*b.d;});
     std::vector<int> rank(area,0),roadId(area,-1),occupied(area,0);
+    std::vector<MapPlanRegion> bridges;
+    std::vector<unsigned char> bridgeEnvelope(area,0);
+    for(auto r:plan.regions)if(r.kind=="asset_bridge"){
+        r.parentId=-1;r.parentIndex=-1;bridges.push_back(r);
+        for(int y=std::max(0,r.y0-2);y<=std::min(d-1,r.y1+2);++y)
+            for(int x=std::max(0,r.x0-2);x<=std::min(w-1,r.x1+2);++x)bridgeEnvelope[y*w+x]=1;
+    }
     auto ground=[&](int x,int y) {
         if(x<1||y<1||x>=w-1||y>=d-1) return false;
         const auto b=plan.biomes[y*w+x];
@@ -89,6 +96,10 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
     Point center{-1,-1}; double best=-1e20;
     for(int y=plazaSize;y<d-plazaSize;y+=(waterfront?1:2)) for(int x=plazaSize;x<w-plazaSize;x+=(waterfront?1:2)) {
         if(!square(x-plazaSize/2,y-plazaSize/2,plazaSize,true)) continue;
+        bool bridgeOverlap=false;
+        for(int yy=y-plazaSize/2;yy<y-plazaSize/2+plazaSize;++yy)
+            for(int xx=x-plazaSize/2;xx<x-plazaSize/2+plazaSize;++xx)bridgeOverlap|=bridgeEnvelope[yy*w+xx]!=0;
+        if(bridgeOverlap)continue;
         if(get("preserveSettlementRoads",0)) {
             bool seedRoad=false;
             for(int yy=y-plazaSize/2;yy<y-plazaSize/2+plazaSize;++yy)for(int xx=x-plazaSize/2;xx<x-plazaSize/2+plazaSize;++xx)
@@ -122,6 +133,8 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
     plan.plazaEnabled=true;plan.plazaStyle=urban?"market_square":"founding_square";
     plan.regions.push_back({"village_center",0,px,py,px+plazaSize-1,py+plazaSize-1});
     plan.regions.back().growthStage=0;
+    // Centre remains index zero for civic parent links; retained crossings follow it.
+    plan.regions.insert(plan.regions.end(),bridges.begin(),bridges.end());
     plan.markers.push_back({"village_center",center.x,center.y,0});
     std::vector<std::vector<Point>> mainPaths;
     auto paint=[&](const std::vector<Point>& path,int width,int id) {
@@ -291,7 +304,7 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
         if(x<3||y<3||x+width+3>=w||y+depth+3>=d)return false;
         for(int yy=y-2;yy<y+depth+2;++yy)for(int xx=x-2;xx<x+width+2;++xx){
             const int at=yy*w+xx;
-            if(occupied[at]||rank[at]||!ground(xx,yy)||(!plan.settlementMask.empty()&&!plan.settlementMask[at]))return false;
+            if(occupied[at]||bridgeEnvelope[at]||rank[at]||!ground(xx,yy)||(!plan.settlementMask.empty()&&!plan.settlementMask[at]))return false;
         }
         int strongest=0;
         for(int yy=y-3;yy<=y+depth+2;++yy)for(int xx=x-3;xx<=x+width+2;++xx)strongest=std::max(strongest,rank[yy*w+xx]);
@@ -402,7 +415,7 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
             bool fits=true;
             for(int yy=y-2;yy<y+a.d+2&&fits;++yy) for(int xx=x-2;xx<x+a.w+2;++xx) {
                 const int i=yy*w+xx;
-                if(occupied[i]||rank[i]||!ground(xx,yy)||(!plan.settlementMask.empty()&&!plan.settlementMask[i])) {fits=false;break;}
+                if(occupied[i]||bridgeEnvelope[i]||rank[i]||!ground(xx,yy)||(!plan.settlementMask.empty()&&!plan.settlementMask[i])) {fits=false;break;}
             }
             if(!fits)continue;
             int strongest=0;
@@ -527,7 +540,7 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
     if(get("wallHeight",0)>0 && !plan.settlementMask.empty()) {
         for(int y=1;y<d-1;++y) for(int x=1;x<w-1;++x) {
             const int i=y*w+x;
-            if(!plan.settlementMask[i]||rank[i]||occupied[i]||!ground(x,y))continue;
+            if(!plan.settlementMask[i]||rank[i]||occupied[i]||bridgeEnvelope[i]||!ground(x,y))continue;
             bool boundary=false;
             for(Point n:dirs) if(!plan.settlementMask[(y+n.y)*w+x+n.x])boundary=true;
             if(boundary)plan.biomes[i]=WALL;

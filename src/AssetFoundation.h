@@ -8,6 +8,46 @@
 #include <queue>
 #include <random>
 
+// Reserve native wall modules after growth, without taking road/plot setbacks.
+// A caller supplies the perimeter mask so keep masonry and mountains are not
+// mistaken for the castle's outer curtain.
+inline void ReserveSettlementWallAssets(MapPlan& plan,const MapGenParams& params,
+    const std::vector<unsigned char>& perimeter) {
+    auto get=[&](const std::string& key,int fallback){
+        const auto it=params.extra.find(key);return it==params.extra.end()?fallback:static_cast<int>(std::lround(it->second));
+    };
+    const int w=plan.width,d=plan.depth;
+    if(get("wallHeight",0)<=0 || perimeter.size()!=plan.biomes.size())return;
+    std::vector<unsigned char> occupied(w*d,0);
+    for(const auto&r:plan.regions)if(r.kind=="asset_plot"||r.kind=="asset_bridge"||r.kind=="asset_wall"||
+        r.kind=="village_center"||r.kind=="village_open_space"||r.kind=="settlement_facility"||
+        r.kind=="keep"||r.kind=="keep_expansion"||r.kind=="tower"||r.kind=="gatehouse"){
+        for(int y=std::max(0,r.y0-2);y<=std::min(d-1,r.y1+2);++y)
+            for(int x=std::max(0,r.x0-2);x<=std::min(w-1,r.x1+2);++x)occupied[y*w+x]=1;
+    }
+    for(int n=0;n<get("assetCount",0);++n){
+        const auto key="asset"+std::to_string(n);
+        const int id=get(key+"Id",-1),aw=get(key+"Width",0),ad=get(key+"Depth",0);
+        if(get(key+"Category",0)!=2||id<0||aw<=0||ad<=0||aw>w-4||ad>d-4)continue;
+        bool done=false;
+        for(int y=2;y+ad<=d-2&&!done;++y)for(int x=2;x+aw<=w-2&&!done;++x){
+            bool touches=false,fits=true;
+            for(int yy=y;yy<y+ad&&fits;++yy)for(int xx=x;xx<x+aw;++xx){
+                const int i=yy*w+xx;const auto b=plan.biomes[i];
+                touches|=perimeter[i]!=0;
+                if(occupied[i] || (b!=PLAIN&&b!=DESERT&&b!=FOREST&&!(perimeter[i]&&b==WALL))){fits=false;break;}
+            }
+            if(!fits||!touches)continue;
+            MapPlanRegion r{"asset_wall",id,x,y,x+aw-1,y+ad-1};
+            r.role="MA"+std::string(id<10?"00":id<100?"0":"")+std::to_string(id);
+            r.rotation=get(key+"Rotation",0);plan.regions.push_back(r);
+            for(int yy=y;yy<y+ad;++yy)for(int xx=x;xx<x+aw;++xx)plan.biomes[yy*w+xx]=TOWN_STONE_FLOOR;
+            for(int yy=y-2;yy<y+ad+2;++yy)for(int xx=x-2;xx<x+aw+2;++xx)occupied[yy*w+xx]=1;
+            done=true;
+        }
+    }
+}
+
 // Editor-only foundation mode. Dimensions are block counts decoded by the
 // editor from the current map_asset database, including roof overhangs.
 inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std::string& error) {
@@ -88,7 +128,12 @@ inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std:
     }
     // Unsupported old crossings cannot be advertised as asset-ready bridges.
     for (int i=0;i<w*d;++i) if (plan.biomes[i]==BRIDGE && !bridgePlot[i]) plan.biomes[i]=RIVER;
-    if(plan.type=="village" || plan.type=="town") return village_growth::Generate(plan,params,error);
+    if(plan.type=="village" || plan.type=="town") {
+        if(!village_growth::Generate(plan,params,error))return false;
+        for(int i=0;i<w*d;++i)outer[i]=plan.biomes[i]==WALL;
+        ReserveSettlementWallAssets(plan,params,outer);
+        return true;
+    }
     auto terrain = [&](int x, int y) {
         if (x < 1 || y < 1 || x >= w-1 || y >= d-1) return false;
         const auto b = plan.biomes[y*w+x];

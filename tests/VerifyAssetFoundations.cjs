@@ -9,8 +9,7 @@ const db = JSON.parse(fs.readFileSync(databasePath, 'utf8'));
 const assets = Object.entries(db).filter(([id, a]) => a.bw64 &&
     /家|屋敷|ショップ|倉庫|アパート|教会|橋|城|宿|店/.test(Object.values(a.name || {}).join(' ')));
 const dimensions = new Map();
-const args = ['-p', 'assetFoundation=1', '-p', `assetCount=${assets.length}`];
-assets.forEach(([id, a], i) => {
+assets.forEach(([id, a]) => {
     const b = zlib.zstdDecompressSync(Buffer.from(a.bw64, 'base64'));
     // This fixture reader supports the native BlockWorld 0x0cae header.
     // Production uses ObjectInput.decode in the editor instead.
@@ -19,31 +18,19 @@ assets.forEach(([id, a], i) => {
     const fields = {Id: Number(id.slice(2)), Width: b.readUInt16LE(8), Depth: b.readUInt16LE(12),
         Category: /城壁/.test(name) ? 2 : /橋/.test(name) ? 1 : 0};
     dimensions.set(id, fields);
-    for (const [key, value] of Object.entries(fields)) args.push('-p', `asset${i}${key}=${value}`);
 });
 fs.mkdirSync(output, {recursive: true});
-let assetArgs=args;
-if (process.argv.includes('--params-file')) {
-    const parameters={};
-    for(let i=0;i<args.length;i+=2) {
-        const [key,value]=args[i+1].split('=');
-        parameters[key]=Number(value);
-    }
-    const file=path.join(output,'asset_params.json');
-    fs.writeFileSync(file,JSON.stringify(parameters));
-    assetArgs=['--params-file',file];
-}
 const villageParameterIndex=process.argv.indexOf('--village-params');
 const villageParameterFile=villageParameterIndex>=0?process.argv[villageParameterIndex+1]:null;
 const nativeParameters=villageParameterFile?JSON.parse(fs.readFileSync(villageParameterFile,'utf8')):null;
-if(!villageParameterFile) console.log('SKIP native village/town integration: provide --village-params <editor door-aware last_asset_params.json>; CTest covers settlement growth separately');
-const types=villageParameterFile?['village','town','castle']:['castle'];
+if(!villageParameterFile) console.log('SKIP native village/town/castle integration: provide --village-params <editor door-aware last_asset_params.json>; CTest covers settlement growth separately');
+const types=villageParameterFile?['village','town','castle']:[];
 const cases = types.flatMap(type => [0, 6].map(wallHeight => ({type, wallHeight, site: 0})));
 if (process.argv.includes('--all-sites')) for (const type of types.filter(t=>t!=='castle'))
     for (let site = 1; site <= 6; ++site) cases.push({type, wallHeight: 0, site});
 for (const {type, wallHeight, site} of cases) {
     const name = `${type}_wall${wallHeight}_site${site}`;
-    const parameters=type==='village'||type==='town'?['--params-file',villageParameterFile]:assetArgs;
+    const parameters=['--params-file',villageParameterFile];
     const result = cp.spawnSync(executable, ['-type', type, '-w', '320', '-d', '320', '-seed', '4242',
         '-dir', output, '-out', name, ...parameters, '-p', `wallHeight=${wallHeight}`, '-p', `settlementSite=${site}`,
         '--data', '--plan', '--strict'], {encoding: 'utf8'});
@@ -70,13 +57,19 @@ for (const {type, wallHeight, site} of cases) {
             for(let i=0;i<nativeParameters.assetCount;i++)if('MA'+String(nativeParameters['asset'+i+'Id']).padStart(3,'0')===r.role&&nativeParameters['asset'+i+'Rotation']===r.rotation){k='asset'+i;break;}
             if(!k)throw Error('No matching native rotation');
             const side=nativeParameters[k+'DoorSide'];
-            if(side===0||r.doorX!==r.x0+nativeParameters[k+'DoorX']||r.doorY!==r.y0+nativeParameters[k+'DoorY'])throw Error('North-facing or misaligned entrance');
+            const northKeep=Math.max(0,Math.min(100,Math.round(nativeParameters.northFacingHouseKeepPercent??10)));
+            if((side===0&&northKeep===0)||r.doorX!==r.x0+nativeParameters[k+'DoorX']||r.doorY!==r.y0+nativeParameters[k+'DoorY'])throw Error('Disallowed north-facing or misaligned entrance');
             const x=side===1?r.x1+3:side===3?r.x0-3:r.doorX;
-            const y=side===2?r.y1+3:r.doorY;
+            const y=side===2?r.y1+3:side===0?r.y0-3:r.doorY;
             for(let j=0;j<2;j++)if(![5,6,14].includes(plan.biomes[(y+(side%2?j:0))*320+x+(side%2?0:j)]))throw Error('Entrance misses public street');
         }
-        if(type==='village'&&tiles.includes(12))throw Error('Village yards retained stone paving');
+        if(type==='village') {
+            const wallFloor=new Set();
+            for(const r of plan.regions.filter(r=>r.kind==='asset_wall'))
+                for(let y=r.y0;y<=r.y1;y++)for(let x=r.x0;x<=r.x1;x++)wallFloor.add(y*320+x);
+            if(plan.biomes.some((b,i)=>b===12&&!wallFloor.has(i)))throw Error('Village yards retained stone paving outside native wall foundations');
+        }
     }
-    if (!wallHeight && tiles.some(b => b === 3 || b === 4)) throw Error('Walls remain at height zero');
+    if (!wallHeight && (type==='castle' ? plan.castleDefenseMask.some(b=>b!==0) : tiles.some(b=>b===3||b===4))) throw Error('Outer defenses remain at height zero');
     console.log(`PASS ${name}: ${plan.regions.length} exact-size asset plots; strict 2x2 routing`);
 }

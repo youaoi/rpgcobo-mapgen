@@ -11,6 +11,10 @@ inline bool GenerateCastleSettlementCandidate(MapPlan& plan,const MapGenParams& 
     const int w=params.width,d=params.depth;
     if(w<128||d<128){error="Castle with a 2x2 human requires at least 128x128 blocks";return false;}
     auto cp=params;cp.width=w/2;cp.depth=d/2;cp.extra["castleHumanScale"]=2;
+    if(cp.extra.count("wallHeight") && cp.extra.at("wallHeight")<=0){
+        cp.extra["outerWallDefenseStrength"]=0;
+        cp.extra.erase("outerDefense");
+    }
     cp.extra["keepScale"]=2;cp.extra["sharedKeepWalls"]=1;cp.extra["nativeAssetTown"]=1;
     cp.extra["candidateCount"]=1;cp.extra["castleCandidateOffset"]=layoutCandidate;
     if(!cp.extra.count("mainRoadWidth"))cp.extra["mainRoadWidth"]=3;
@@ -116,6 +120,9 @@ inline bool GenerateCastleSettlementCandidate(MapPlan& plan,const MapGenParams& 
     plan.castleHistory.push_back({"castle_town","native_asset_growth_inside_original_outer_bailey",static_cast<int>(removedIds.size()),1.0});
     plan.castleHistory.push_back({"layout_selection","castle_and_native_frontage_candidate",layoutCandidate,1.0});
     if(!castle_interior::Decorate(plan,params,error))return false;
+    std::vector<unsigned char> perimeter(w*d,0);
+    for(int i=0;i<w*d;++i)perimeter[i]=plan.castleDefenseMask[i]==2;
+    ReserveSettlementWallAssets(plan,params,perimeter);
     return true;
 }
 

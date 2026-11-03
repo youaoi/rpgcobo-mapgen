@@ -111,6 +111,29 @@ int main(){try {
         }
         Require(greatGates==1,"Castle does not have exactly one great front door");
     }
+    {
+        auto p=Parameters(0,160);p.extra["wallHeight"]=0;
+        p.extra["outerDefense"]=1.8;p.extra["outerWallDefenseStrength"]=1.8;
+        MapPlan plan;std::string error;Require(GenerateCastleSettlement(plan,p,error),error);
+        Require(plan.outerWallDefenseStrength==0&&std::none_of(plan.castleDefenseMask.begin(),plan.castleDefenseMask.end(),[](auto b){return b!=0;}),
+            "Legacy outerDefense alias re-enabled zero-height perimeter");
+        Require(std::any_of(plan.biomes.begin(),plan.biomes.end(),[](auto b){return b==WALL||b==INNERWALL;}),"Zero outer wall height removed keep masonry");
+    }
+    {
+        auto p=Parameters(0,240);p.extra["wallHeight"]=6;p.extra["outerWallDefenseStrength"]=1;
+        p.extra["assetCount"]=5;p.extra["asset4Id"]=38;p.extra["asset4Category"]=2;
+        p.extra["asset4Width"]=4;p.extra["asset4Depth"]=2;
+        MapPlan plan;std::string error;Require(GenerateCastleSettlement(plan,p,error),error);
+        int modules=0;
+        for(const auto&r:plan.regions)if(r.kind=="asset_wall"){
+            ++modules;Require(r.x1-r.x0+1==4&&r.y1-r.y0+1==2,"Castle wall module dimensions changed");
+            bool perimeter=false;
+            for(int y=r.y0;y<=r.y1;++y)for(int x=r.x0;x<=r.x1;++x)perimeter|=plan.castleDefenseMask[y*240+x]==2;
+            Require(perimeter,"Castle wall module did not reserve outer curtain");
+        }
+        Require(modules>0,"Castle bypassed wall module reservation");
+        Require(EvaluateAssetFoundation(plan).Passed(),"Wall module obstructed castle routing");
+    }
     // Editor defaults with a moat and wider original approach exposed side
     // gates/towers being sealed by the enlarged keep, especially hill castles.
     for(int mode=0;mode<5;++mode){

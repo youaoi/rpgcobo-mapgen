@@ -1368,6 +1368,15 @@ bool CastleMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError) 
             bool found = false;
             for (const auto& edge : roomEdges) {
                 if (roomConnected[edge.a] == roomConnected[edge.b]) continue;
+                if(sharedKeepWalls && GetParam("nativeAssetTown",0)>0){
+                    const auto&a=rooms[edge.a].rect;const auto&b=rooms[edge.b].rect;
+                    const bool vertical=a.x1==b.x0||b.x1==a.x0;
+                    const int lo=vertical?std::max(a.y0,b.y0)+1:std::max(a.x0,b.x0)+1;
+                    const int hi=vertical?std::min(a.y1,b.y1)-3:std::min(a.x1,b.x1)-3;
+                    // A native doorway needs two source cells plus corner margins.
+                    // Reject this adjacency before changing either room's cells.
+                    if(lo>hi)continue;
+                }
                 if (roomConnected[edge.a]) { openRoomCell(edge.doorA); openRoomDoor(edge.doorB, edge.b); }
                 else { openRoomDoor(edge.doorA, edge.a); openRoomCell(edge.doorB); }
                 if(sharedKeepWalls && GetParam("nativeAssetTown",0)>0){

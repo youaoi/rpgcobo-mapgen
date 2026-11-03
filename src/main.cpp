@@ -678,6 +678,7 @@ int main(int argc, char** argv) {
     const bool foundation = params.extra.count("assetFoundation") && params.extra.at("assetFoundation") > 0;
     if (foundation && opt.type == "castle" && params.extra.count("wallHeight") && params.extra.at("wallHeight")<=0) {
         params.extra["outerWallDefenseStrength"] = 0.0;
+        params.extra.erase("outerDefense");
     }
     const MapTypeSpec* type = FindMapType(opt.type);
     std::unique_ptr<MapImageGenerator> generator = type->create(params);

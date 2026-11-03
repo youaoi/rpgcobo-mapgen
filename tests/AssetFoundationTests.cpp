@@ -1,4 +1,5 @@
 #include "AssetFoundation.h"
+#include "SettlementRelief.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -61,6 +62,32 @@ int main() {
             // must catch a blockage for the full 2x2 human, even one cell.
             const auto m=p.markers.front(); p.biomes[m.y*p.width+m.x+1]=WALL;
             Require(!EvaluateAssetFoundation(p).Passed(),"2x2 obstruction undetected");
+        }
+        // Exercise the actual early-return growth paths, not the legacy planner.
+        for(const auto* type:{"village","town"}) for(int walls:{0,6}) {
+            auto p=Terrain();p.type=type;p.settlementMask.assign(160*160,0);
+            for(int y=16;y<144;++y)for(int x=16;x<144;++x)p.settlementMask[y*160+x]=1;
+            auto args=Params(walls);args.extra["assetPlotCount"]=8;
+            args.extra["asset0DoorSide"]=2;args.extra["asset0DoorX"]=5;args.extra["asset0DoorY"]=10;
+            args.extra["asset1DoorSide"]=2;args.extra["asset1DoorX"]=12;args.extra["asset1DoorY"]=15;
+            std::string error;Require(BuildAssetFoundation(p,args,error),error.c_str());
+            int bridges=0,wallModules=0;
+            Require(p.regions.front().kind=="village_center","Retained bridge broke centre indexing");
+            for(const auto&r:p.regions){
+                if(r.kind=="asset_wall"){
+                    ++wallModules;Require(r.x1-r.x0+1==13&&r.y1-r.y0+1==11,"Growth changed wall dimensions");
+                }
+                if(r.kind!="asset_bridge")continue;++bridges;
+                Require(r.x1-r.x0+1==6&&r.y1-r.y0+1==9,"Growth discarded native bridge dimensions");
+                for(const auto&b:p.regions)if(b.kind=="asset_plot"||b.kind=="settlement_facility"||b.kind=="village_center")
+                    Require(b.x1<r.x0-2||b.x0>r.x1+2||b.y1<r.y0-2||b.y0>r.y1+2,"Building encroaches on bridge setback");
+            }
+            Require(bridges>0,"Growth discarded preplanned bridge");
+            Require((wallModules>0)==(walls>0),"Growth skipped wall module reservation");
+            ApplySettlementRelief(p,8);ApplySettlementShore(p);
+            for(const auto&r:p.regions)if(r.kind=="asset_bridge"||r.kind=="asset_wall")
+                for(int y=r.y0-2;y<=r.y1+2;++y)for(int x=r.x0-2;x<=r.x1+2;++x)
+                    Require(!p.heightOffsets[y*160+x]&&!p.shoreCuts[y*160+x],"Bridge/wall setback deformed after growth");
         }
         auto p=Terrain(); auto args=Params(); args.extra["asset0Width"]=1000; args.extra["asset1Width"]=1000;
         std::string error;

@@ -211,22 +211,24 @@ inline bool Decorate(MapPlan& plan,const MapGenParams& params,std::string& error
     const auto documents=Native(params,4,34,2,2,1),book=Native(params,4,33,2,2,1),dish=Native(params,4,35,2,3,1);
     // Fix the focal point before routing circulation. Optional furniture may
     // be omitted, but the throne must never slide sideways to dodge a door.
+    const auto throne=Native(params,4,31,4,3,4);
     for(int parent:rooms){const auto room=plan.regions[parent];if(room.role!="throne_room")continue;
         const int cx=(room.x0+room.x1)/2,top=room.y0+3;
-        if(place(parent,"royal_throne",Native(params,4,31,4,3,4),cx-1,top,0,0)<0){
+        if(place(parent,"royal_throne",throne,cx-(throne.w-1)/2,top,0,0)<0){
             error="Throne room cannot fit a centred throne away from its doors";return false;
         }
-        if(cx-4<room.x0+1||cx+5>room.x1-1||top+10>room.y1-2){error="Throne room lacks a full audience area";return false;}
-        reserve({"",0,cx-4,top-1,cx+5,top+2},parent,"throne_buffer");
-        reserve({"",0,cx-4,top+3,cx+5,top+10},parent,"audience_space");
-        surface({"",0,cx-2,top+3,cx+3,room.y1-2},parent,"royal_carpet",true);
+        const int audienceY=top+throne.d;
+        if(cx-4<room.x0+1||cx+5>room.x1-1||audienceY+7>room.y1-2){error="Throne room lacks a full audience area";return false;}
+        reserve({"",0,cx-4,top-1,cx+5,audienceY-1},parent,"throne_buffer");
+        reserve({"",0,cx-4,audienceY,cx+5,audienceY+7},parent,"audience_space");
+        surface({"",0,cx-2,audienceY,cx+3,room.y1-2},parent,"royal_carpet",true);
     }
     // Route every door to a shared room hub before adding any secondary
     // furniture. The reserved bands are 4 blocks wide (6 in public halls),
     // with the 4-block doorway as their only local narrowing.
     for(int parent:rooms){
         const auto room=plan.regions[parent];if(room.kind!="room")continue;
-        const int cx=(room.x0+room.x1-1)/2,cy=room.role=="throne_room"?room.y0+11:(room.y0+room.y1-1)/2;
+        const int cx=(room.x0+room.x1-1)/2,cy=room.role=="throne_room"?room.y0+throne.d+8:(room.y0+room.y1-1)/2;
         auto inside=[&](int x,int y){return x>=room.x0+1&&y>=room.y0+1&&x+1<=room.x1-1&&y+1<=room.y1-1&&pass(x,y);};
         int hub=-1,best=100000;
         for(int y=room.y0+1;y<room.y1-1;++y)for(int x=room.x0+1;x<room.x1-1;++x)

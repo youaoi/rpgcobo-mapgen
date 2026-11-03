@@ -310,7 +310,9 @@ CLIでは `-p assetFoundation=1 -p assetCount=N` に加えて各アセットの 
 
 生成UIでは建物数の目標（1〜128）、道路幅（2〜6ブロック）、地形候補数（1〜12）も調整できます。村・街では地形の向き（ランダム／0・90・180・270度）も指定できます。数値項目の上下限を同じ値にすると固定、異なる値にすると候補ごとにその範囲から選択します。道路幅は `assetRoadWidth` に対応します。建物の周囲には引き続き最低2ブロックの余白を確保します。
 
-検証: 通常のCTestに加え、Node 24以降で `node tests/VerifyAssetFoundations.cjs <map_asset.json> <mapimggen.exe> <出力フォルダー> --params-file` を実行すると、設定ファイルを経由して実アセットを使った村・街・城の城壁あり／なしを検証します。
+検証: 通常のCTestに加え、Node 24以降で `node tests/VerifyAssetFoundations.cjs <map_asset.json> <mapimggen.exe> <出力フォルダー> --village-params <last_asset_params.json>` を実行すると、エディターが記録した扉・回転情報を設定ファイル経由で渡し、村・街・城の城壁あり／なしを検証します。互換性のため引数名は `--village-params` ですが、3種類すべてで必須です。指定がなければ3種類とも明示的にスキップします。北向き建物は採用率設定に従って検証し、城の外壁なし判定では主城の壁を除外して防御マスクを確認します。
+
+橋の区画は街の成長候補へ引き継ぎ、広場・建物・公共設備が橋とその周囲2セルを占有しないようにします。起伏・水岸調整も橋・壁の区画と周囲2セルを保護します。壁アセットの下地予約は成長後に行い、城では主城の壁と混同しないよう `castleDefenseMask=2` の外周防御帯を使用します。実寸で収まる位置がなければ、その壁アセットの予約は省略します。
 
 ## 村が成長する生成方式
 
@@ -336,7 +338,7 @@ CLIでは `-p assetFoundation=1 -p assetCount=N` に加えて各アセットの 
 - 建物は接する道路のうち太い通りへ扉を向け、扉の横方向のずれに合わせて区画位置を決めます。区画JSONの `rotation` はエンジンの回転、`doorX` / `doorY` は画像座標の2×2入口位置、`frontageWidth` は面する通りの幅です。`growthStage` は中心0・大通り1・大通り沿いの家2・中通り沿いの家3を表します。
 - CLIで村を生成するには、各アセット候補に `Rotation`、`DoorX`、`DoorY`、`DoorSide`（画像座標で北0・東1・南2・西3）も渡します。幅・奥行きと入口は回転後・画像方向に揃えた値です。エディターで候補を選ぶと `tmp/mapgen/last_asset_params.json` に実際の数値を保存します。
 
-検証はCTestの `village_growth` を使用します。実アセットの連携検証では `VerifyAssetFoundations.cjs` に `--village-params <last_asset_params.json>` を加え、エンジンが読み取った扉情報を使用してください。実際の扉情報がない場合は、そのスクリプトの村の連携検証を明示的にスキップします。
+検証はCTestの `village_growth` を使用します。実アセットの連携検証では `VerifyAssetFoundations.cjs` に `--village-params <last_asset_params.json>` を加え、エンジンが読み取った扉情報を使用してください。実際の扉情報がない場合は、そのスクリプトの村・街・城の連携検証を明示的にスキップします。
 
 ### 起伏・植生・道路の接続
 

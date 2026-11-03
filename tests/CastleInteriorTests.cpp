@@ -68,5 +68,17 @@ int main(){try{
         }
         ++checked;
     }
+    for(int depth:{2,4,6}){
+        auto p=Params(0,240,4);p.extra["castleObject4_31Depth"]=depth;
+        MapPlan plan;std::string error;Require(GenerateCastleSettlement(plan,p,error),error);
+        const auto throne=std::find_if(plan.regions.begin(),plan.regions.end(),[](const auto&r){return r.role=="royal_throne";});
+        Require(throne!=plan.regions.end()&&throne->y1-throne->y0+1==depth,"Native throne depth lost");
+        int audience=0,carpet=0;
+        for(const auto&r:plan.regions){
+            if(r.role=="audience_space"){++audience;Require(r.y0==throne->y1+1&&r.y1-r.y0+1>=8,"Audience overlaps resized throne");}
+            if(r.role=="royal_carpet"){++carpet;Require(r.y0==throne->y1+1,"Carpet starts underneath resized throne");}
+        }
+        Require(audience==1&&carpet==1,"Resized throne lost its audience/carpet");++checked;
+    }
     std::cout<<"PASS "<<checked<<" castles: audience space, reserved circulation, door landings, integrated frames and living rooms\n";
 }catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
