@@ -11,6 +11,10 @@ VillageMapImageGenerator::VillageMapImageGenerator(MapGenParams params)
 
 bool VillageMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError) {
     if (GetParam("assetFoundation",0)>0) {
+        if (params_.width < 32 || params_.depth < 32) {
+            outError = "Village map size must be at least 32x32";
+            return false;
+        }
         // Growth candidates operate on the final assets and roads. Do not
         // score and discard a legacy settlement before the actual planning.
         outPlan.Reset(params_.width,params_.depth,params_.seed,"village");

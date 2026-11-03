@@ -21,7 +21,8 @@ inline void ReserveSettlementWallAssets(MapPlan& plan,const MapGenParams& params
     std::vector<unsigned char> occupied(w*d,0);
     for(const auto&r:plan.regions)if(r.kind=="asset_plot"||r.kind=="asset_bridge"||r.kind=="asset_wall"||
         r.kind=="village_center"||r.kind=="village_open_space"||r.kind=="settlement_facility"||
-        r.kind=="keep"||r.kind=="keep_expansion"||r.kind=="tower"||r.kind=="gatehouse"){
+        r.kind=="keep"||r.kind=="keep_expansion"||r.kind=="tower"||r.kind=="gatehouse"||
+        r.kind=="castle_activity"||r.kind=="castle_fixture"||r.kind=="settlement_prop"){
         for(int y=std::max(0,r.y0-2);y<=std::min(d-1,r.y1+2);++y)
             for(int x=std::max(0,r.x0-2);x<=std::min(w-1,r.x1+2);++x)occupied[y*w+x]=1;
     }
@@ -41,7 +42,8 @@ inline void ReserveSettlementWallAssets(MapPlan& plan,const MapGenParams& params
             MapPlanRegion r{"asset_wall",id,x,y,x+aw-1,y+ad-1};
             r.role="MA"+std::string(id<10?"00":id<100?"0":"")+std::to_string(id);
             r.rotation=get(key+"Rotation",0);plan.regions.push_back(r);
-            for(int yy=y;yy<y+ad;++yy)for(int xx=x;xx<x+aw;++xx)plan.biomes[yy*w+xx]=TOWN_STONE_FLOOR;
+            // The editor records this reservation but does not place the module.
+            // Keep the terrain and curtain intact until a module is placed.
             for(int yy=y-2;yy<y+ad+2;++yy)for(int xx=x-2;xx<x+aw+2;++xx)occupied[yy*w+xx]=1;
             done=true;
         }
@@ -229,7 +231,7 @@ inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std:
             }
             if (!fits || !touches) continue;
             for (int yy=y; yy<y+a.d; ++yy) for (int xx=x; xx<x+a.w; ++xx) {
-                occupied[yy*w+xx]=1; plan.biomes[yy*w+xx]=TOWN_STONE_FLOOR;
+                occupied[yy*w+xx]=1;
             }
             MapPlanRegion r{"asset_wall", a.id,x,y,x+a.w-1,y+a.d-1};
             r.role="MA" + std::string(a.id<10 ? "00" : (a.id<100 ? "0" : "")) + std::to_string(a.id);

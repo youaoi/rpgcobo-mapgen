@@ -46,6 +46,15 @@ for (const {type, wallHeight, site} of cases) {
     }
     const csv = fs.readFileSync(path.join(output, `${name}_biome.csv`), 'utf8');
     if (!wallHeight && plan.regions.some(r => r.kind === 'asset_wall')) throw Error('Unexpected wall plot');
+    for (const wall of plan.regions.filter(r => r.kind === 'asset_wall')) {
+        let hasWall = false;
+        for (let y = wall.y0; y <= wall.y1; ++y) {
+            for (let x = wall.x0; x <= wall.x1; ++x) {
+                if (plan.biomes[y * plan.width + x] === 3) hasWall = true;
+            }
+        }
+        if (!hasWall) throw Error('Wall reservation removed the existing wall');
+    }
     const tiles = csv.trim().split(/[\s,]+/).map(Number);
     if(type!=='castle') {
         const base=Math.max(2,Math.min(6,Math.round(nativeParameters.assetRoadWidth??2)));
@@ -63,12 +72,7 @@ for (const {type, wallHeight, site} of cases) {
             const y=side===2?r.y1+3:side===0?r.y0-3:r.doorY;
             for(let j=0;j<2;j++)if(![5,6,14].includes(plan.biomes[(y+(side%2?j:0))*320+x+(side%2?0:j)]))throw Error('Entrance misses public street');
         }
-        if(type==='village') {
-            const wallFloor=new Set();
-            for(const r of plan.regions.filter(r=>r.kind==='asset_wall'))
-                for(let y=r.y0;y<=r.y1;y++)for(let x=r.x0;x<=r.x1;x++)wallFloor.add(y*320+x);
-            if(plan.biomes.some((b,i)=>b===12&&!wallFloor.has(i)))throw Error('Village yards retained stone paving outside native wall foundations');
-        }
+        if (type === 'village' && plan.biomes.includes(12)) throw Error('Village yards retained stone paving');
     }
     if (!wallHeight && (type==='castle' ? plan.castleDefenseMask.some(b=>b!==0) : tiles.some(b=>b===3||b===4))) throw Error('Outer defenses remain at height zero');
     console.log(`PASS ${name}: ${plan.regions.length} exact-size asset plots; strict 2x2 routing`);

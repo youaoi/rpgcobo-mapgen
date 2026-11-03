@@ -30,6 +30,23 @@ MapPlan Terrain() {
 }
 int main() {
     try {
+        for (const auto* kind : {"castle_activity", "castle_fixture", "settlement_prop"}) {
+            MapPlan plan;
+            plan.Reset(32,32,42,"castle");
+            plan.biomes.assign(32*32,PLAIN);
+            plan.biomes[4*32+4]=WALL;
+            std::vector<unsigned char> perimeter(32*32,0);
+            perimeter[4*32+4]=1;
+            plan.regions.push_back({kind,0,6,6,8,8});
+            ReserveSettlementWallAssets(plan,Params(6),perimeter);
+            Require(plan.regions.size()==1,"Wall reservation overlaps protected castle use");
+            plan.regions.clear();
+            const auto original=plan.biomes;
+            ReserveSettlementWallAssets(plan,Params(6),perimeter);
+            Require(plan.regions.size()==1 && plan.regions.front().kind=="asset_wall",
+                "Unoccupied wall module site was not reserved");
+            Require(plan.biomes==original,"Wall reservation changed the original terrain");
+        }
         for(int walls : {0,6}) for(int seed : {1,42,4242}) for(int roadWidth : {2,4,6}) {
             auto p=Terrain(); auto args=Params(walls); args.seed=seed; std::string error;
             args.extra["assetRoadWidth"]=roadWidth;

@@ -71,8 +71,23 @@ int main(){try{
     for(auto [wealth,count]:std::vector<std::pair<double,int>>{{.7,1},{.999,1},{1.0,2},{1.499,2},{1.5,3},{1.999,3},{2.0,5},{2.5,5}})
         Require(settlement_civic::Program(Params(wealth),wealth).size()==static_cast<std::size_t>(count),"Equipment boundary comparison is wrong");
     int layouts=0;
+    for (const auto& [width, depth] : {std::pair<int,int>{31,32}, {32,31}, {-1,32}}) {
+        auto params=Params(1.0);
+        params.width=width;
+        params.depth=depth;
+        MapPlan p;
+        p.Reset(64,64,1,"previous");
+        std::string error;
+        Require(!VillageMapImageGenerator(params).Generate(p,error) && error.find("32x32")!=std::string::npos,
+            "Asset village accepted invalid dimensions");
+        Require(p.type=="previous" && p.width==64,"Invalid dimensions reset the output plan");
+    }
     for(const std::string type:{"village","town"})for(int site=0;site<7;++site)for(double wealth:{1.999,2.0}){
         auto params=Params(wealth,site);MapPlan p;std::string error;
+        if (type=="village" && wealth>=2.0) {
+            params.extra.erase("asset4LimitGroup");
+            params.extra["asset5LimitGroup"]=1;
+        }
         bool ok=type=="village"?VillageMapImageGenerator(params).Generate(p,error):TownMapImageGenerator(params).Generate(p,error);
         Require(ok,error);ok=BuildAssetFoundation(p,params,error);Require(ok,type+" site="+std::to_string(site)+": "+error);
         ApplySettlementRelief(p,4);ApplySettlementShore(p);ApplySettlementDecoration(p,wealth);Check(p,params);++layouts;

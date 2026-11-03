@@ -42,7 +42,11 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
     if(assets.empty()) {error="Settlement growth needs front-facing buildings with identified exterior doors";return false;}
     std::vector<Asset> mayorAssets;
     if(civicEnabled&&wealth>=2.0){
-        for(const auto&a:assets)if(a.residential&&a.side==2&&a.limitGroup==0&&std::max(a.w,a.d)>12)mayorAssets.push_back(a);
+        for (const auto& asset : assets) {
+            const bool ordinaryResidence = asset.limitGroup == 0 || asset.limitGroup == asset.id + 1000;
+            if (ordinaryResidence && asset.residential && asset.side == 2 && std::max(asset.w,asset.d) > 12)
+                mayorAssets.push_back(asset);
+        }
         std::stable_sort(mayorAssets.begin(),mayorAssets.end(),[](const auto&a,const auto&b){return a.w*a.d>b.w*b.d;});
         if(mayorAssets.empty()){error="Wealth 2.0 requires a large residential asset with a south-facing exterior door";return false;}
     }
