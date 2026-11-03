@@ -148,6 +148,15 @@ int main(){try {
         for(const auto&r:land.regions)if(r.kind=="asset_plot") {north|=r.rotation==2;side|=r.rotation%2==1;}
         Require(percent?north&&side:!north&&!side,"Orientation retention endpoint ignored");
     }
+    for (int size : {-6,1,161}) {
+        auto params=Parameters(0,4);
+        params.extra["settlementPlazaSize"]=size;
+        MapPlan land;
+        land.Reset(160,160,params.seed,"village");
+        land.biomes.assign(25600,PLAIN);
+        Require(!village_growth::Generate(land,params,reason) && reason.find("plaza size")!=std::string::npos,
+            "Invalid plaza size reached the centre search");
+    }
     int churchesSeen=0;
     for(int seed=1;seed<=8;++seed){
         auto p=Parameters(0,4,seed);p.extra["assetCount"]=12;p.extra["assetPlotCount"]=24;

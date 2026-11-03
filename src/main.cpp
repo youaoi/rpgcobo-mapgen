@@ -701,7 +701,7 @@ int main(int argc, char** argv) {
         ApplySettlementRelief(plan, static_cast<int>(std::round(params.extra.count("terrainRelief") ? params.extra.at("terrainRelief") : (plan.type=="town"?2:4))));
     if (foundation && (plan.type == "village" || plan.type == "town")) ApplySettlementShore(plan);
     if (foundation && (plan.type == "village" || plan.type == "town"))
-        ApplySettlementDecoration(plan, params.extra.count("countryWealth") ? params.extra.at("countryWealth") : 1.0);
+        ApplySettlementDecoration(plan, params.extra.count("countryWealth") ? params.extra.at("countryWealth") : 1.0, params);
     const MapQualityMetrics quality = foundation ? EvaluateAssetFoundation(plan) : EvaluateMapQuality(plan);
     PrintQuality(quality);
 

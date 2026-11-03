@@ -104,7 +104,7 @@ inline bool GenerateCastleSettlementCandidate(MapPlan& plan,const MapGenParams& 
             std::to_string(std::count(town.settlementMask.begin(),town.settlementMask.end(),1))+", public roads="+
             std::to_string(std::count(town.biomes.begin(),town.biomes.end(),ROAD))+")";return false;
     }
-    ApplySettlementDecoration(town,plan.countryWealth);
+    ApplySettlementDecoration(town,plan.countryWealth,params);
     plan.settlementMask=town.settlementMask;plan.heightOffsets.assign(w*d,0);plan.shoreCuts.assign(w*d,0);
     for(int i=0;i<w*d;++i)if(town.settlementMask[i])plan.biomes[i]=town.biomes[i];
     const int offset=static_cast<int>(plan.regions.size());

@@ -17,7 +17,7 @@ MapGenParams Params(double wealth,int site=0){
         p.extra[k+"Width"]=i==4?26:i==5?14:12;p.extra[k+"Depth"]=i==4?17:12;
         p.extra[k+"Residential"]=1;p.extra[k+"LimitGroup"]=0;
         p.extra[k+"DoorSide"]=i<4?(2+i)%4:2;
-        p.extra[k+"DoorX"]=i==1?10:i==3?0:i==4?10:5;
+        p.extra[k+"DoorX"]=i==1?0:i==3?10:i==4?10:5;
         p.extra[k+"DoorY"]=i==0||i==5?10:i==1||i==3?5:i==4?15:0;
     }return p;
 }

@@ -119,8 +119,9 @@ int main(){try {
             "Legacy outerDefense alias re-enabled zero-height perimeter");
         Require(std::any_of(plan.biomes.begin(),plan.biomes.end(),[](auto b){return b==WALL||b==INNERWALL;}),"Zero outer wall height removed keep masonry");
     }
-    {
-        auto p=Parameters(0,240);p.extra["wallHeight"]=6;p.extra["outerWallDefenseStrength"]=1;
+    for(double defense : {1.0,1.8}){
+        auto p=Parameters(0,240);p.extra["wallHeight"]=6;p.extra["outerWallDefenseStrength"]=defense;
+        p.extra["wallThickness"]=2;
         p.extra["assetCount"]=5;p.extra["asset4Id"]=38;p.extra["asset4Category"]=2;
         p.extra["asset4Width"]=4;p.extra["asset4Depth"]=2;
         MapPlan plan;std::string error;Require(GenerateCastleSettlement(plan,p,error),error);
@@ -128,7 +129,11 @@ int main(){try {
         for(const auto&r:plan.regions)if(r.kind=="asset_wall"){
             ++modules;Require(r.x1-r.x0+1==4&&r.y1-r.y0+1==2,"Castle wall module dimensions changed");
             bool perimeter=false;
-            for(int y=r.y0;y<=r.y1;++y)for(int x=r.x0;x<=r.x1;++x)perimeter|=plan.castleDefenseMask[y*240+x]==2;
+            for(int y=r.y0;y<=r.y1;++y)for(int x=r.x0;x<=r.x1;++x){
+                const int i=y*240+x;
+                perimeter |= plan.castleDefenseMask[i]==2 &&
+                    plan.biomes[i]==(defense>=1.8?CASTLE_WALL_WALK:WALL);
+            }
             Require(perimeter,"Castle wall module did not reserve outer curtain");
         }
         Require(modules>0,"Castle bypassed wall module reservation");

@@ -50,7 +50,8 @@ for (const {type, wallHeight, site} of cases) {
         let hasWall = false;
         for (let y = wall.y0; y <= wall.y1; ++y) {
             for (let x = wall.x0; x <= wall.x1; ++x) {
-                if (plan.biomes[y * plan.width + x] === 3) hasWall = true;
+                const i = y * plan.width + x;
+                if (plan.biomes[i] === 3 || (plan.biomes[i] === 18 && plan.castleDefenseMask[i] === 2)) hasWall = true;
             }
         }
         if (!hasWall) throw Error('Wall reservation removed the existing wall');

@@ -10,7 +10,7 @@ MapGenParams Params(int mode,int size,int count){
     for(int i=0;i<4;++i){const auto k="asset"+std::to_string(i);
         p.extra[k+"Id"]=0;p.extra[k+"Rotation"]=i;p.extra[k+"Width"]=12;p.extra[k+"Depth"]=12;
         p.extra[k+"DoorSide"]=(2+i)%4;
-        p.extra[k+"DoorX"]=i==1?10:i==3?0:5;p.extra[k+"DoorY"]=i==0?10:i==2?0:5;
+        p.extra[k+"DoorX"]=i==1?0:i==3?10:5;p.extra[k+"DoorY"]=i==0?10:i==2?0:5;
     }return p;
 }
 int main(){try{

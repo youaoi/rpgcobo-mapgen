@@ -100,6 +100,10 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
     const bool waterfront=plan.settlementSite=="oasis" || plan.settlementSite=="lake" ||
         plan.settlementSite=="river" || plan.settlementSite=="coast";
     const int plazaSize=get("settlementPlazaSize",mainWidth+(urban?8:4)+(waterfront&&mainCount==4?mainWidth:0));
+    if (plazaSize < 2 || plazaSize > std::min(w, d)) {
+        error = "Settlement plaza size must be between 2 and the shorter map dimension";
+        return false;
+    }
     Point center{-1,-1}; double best=-1e20;
     for(int y=plazaSize;y<d-plazaSize;y+=(waterfront?1:2)) for(int x=plazaSize;x<w-plazaSize;x+=(waterfront?1:2)) {
         if(!square(x-plazaSize/2,y-plazaSize/2,plazaSize,true)) continue;
@@ -173,6 +177,7 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
     auto route=[&](Point start,Point dir,int width,bool major,int maxLength) {
         std::vector<Point> path;
         if(!square(start.x,start.y,width,!major,major&&forest)) return path;
+        const int parentWidth = std::max(width, rank[start.y*w+start.x]);
         // A river crossing needs dry full-width land at BOTH ends. Probe in
         // the street's direction, limiting bridge spans to 24 cells; lakes,
         // sea and roads running along the river never qualify.
@@ -225,7 +230,7 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
                     if(rank[yy*w+xx] && !inPlaza(xx,yy)) {blocked=true;break;}
                 // A middle street leaves its parent; it must not travel
                 // sideways along an existing road and merely relabel it.
-                if(!major && f>width && rank[ni]>=middleWidth) blocked=true;
+                if(!major && f>parentWidth && rank[ni]>=middleWidth) blocked=true;
                 if(blocked) continue;
                 prev[ni]=i;distance[ni]=distance[i]+1;q.push(ni);
             }

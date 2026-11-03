@@ -22,6 +22,16 @@ int main(){try {
         for(int y=65;y<78;++y)for(int x=35;x<=44;++x)base.settlementMask[y*80+x]=0;
         auto poor=base,middle=base,rich=base;
         ApplySettlementDecoration(poor,.7);ApplySettlementDecoration(middle,1.5);ApplySettlementDecoration(rich,2.5);
+        auto custom=base;
+        custom.regions[1].role="park";
+        MapGenParams models;
+        models.extra={{"settlementProp_bench_width",5},{"settlementProp_bench_depth",3}};
+        ApplySettlementDecoration(custom,2.5,models);
+        const auto customBench=std::find_if(custom.regions.begin(),custom.regions.end(),
+            [](const auto& region){return region.kind=="settlement_prop" && region.role=="bench";});
+        Require(customBench!=custom.regions.end() && customBench->x1-customBench->x0+1==5 &&
+            customBench->y1-customBench->y0+1==3,
+            "Live bench dimensions were not reserved");
         Require(rich.regions[1].growthStage==3,"Garden style replaced the exported growth stage");
         const auto a=Flowers(poor),b=Flowers(middle),c=Flowers(rich);
         Require(a.empty()&&b.size()>10&&c.size()>b.size(),"Wealth did not increase flowers");

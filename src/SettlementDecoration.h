@@ -1,11 +1,11 @@
 #pragma once
-#include "MapPlan.h"
+#include "MapImageGenerator.h"
 #include <algorithm>
 #include <cmath>
 
 // Decorative cells are separate from terrain and navigation. Stable per-cell
 // samples make richer versions a superset without changing houses or roads.
-inline void ApplySettlementDecoration(MapPlan& plan,double wealth) {
+inline void ApplySettlementDecoration(MapPlan& plan,double wealth,const MapGenParams& params = {}) {
     if(plan.type!="village" && plan.type!="town") return;
     wealth=std::clamp(wealth,0.7,2.5);
     plan.countryWealth=wealth;
@@ -40,6 +40,17 @@ inline void ApplySettlementDecoration(MapPlan& plan,double wealth) {
     const double density=wealth<1.0?0.0:0.04+(wealth-1.0)/1.5*0.51;
     int id=0;
     auto prop=[&](int x,int y,int width,int depth,const std::string& role) {
+        const auto key = "settlementProp_" + role;
+        const auto modelWidth = params.extra.find(key + "_width");
+        const auto modelDepth = params.extra.find(key + "_depth");
+        if (modelWidth != params.extra.end()) {
+            if (!(modelWidth->second >= 1 && modelWidth->second <= w)) return false;
+            width = static_cast<int>(modelWidth->second);
+        }
+        if (modelDepth != params.extra.end()) {
+            if (!(modelDepth->second >= 1 && modelDepth->second <= d)) return false;
+            depth = static_cast<int>(modelDepth->second);
+        }
         if(x<2||y<2||x+width>=w-2||y+depth>=d-2)return false;
         const int level=surface(y*w+x);
         for(int yy=y-1;yy<=y+depth;++yy)for(int xx=x-1;xx<=x+width;++xx) {

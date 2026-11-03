@@ -36,7 +36,8 @@ inline void ReserveSettlementWallAssets(MapPlan& plan,const MapGenParams& params
             for(int yy=y;yy<y+ad&&fits;++yy)for(int xx=x;xx<x+aw;++xx){
                 const int i=yy*w+xx;const auto b=plan.biomes[i];
                 touches|=perimeter[i]!=0;
-                if(occupied[i] || (b!=PLAIN&&b!=DESERT&&b!=FOREST&&!(perimeter[i]&&b==WALL))){fits=false;break;}
+                const bool curtain = perimeter[i] && (b==WALL || b==CASTLE_WALL_WALK);
+                if(occupied[i] || (b!=PLAIN&&b!=DESERT&&b!=FOREST&&!curtain)){fits=false;break;}
             }
             if(!fits||!touches)continue;
             MapPlanRegion r{"asset_wall",id,x,y,x+aw-1,y+ad-1};
