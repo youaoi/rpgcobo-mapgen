@@ -23,7 +23,8 @@ bool VillageMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError)
         std::vector<std::uint8_t> footprint,structure;
         outPlan.biomes.assign(params_.width*params_.depth,PLAIN);
         PrepareSettlementSite(outPlan,footprint,structure,site,rotation,
-            static_cast<std::uint8_t>(site==SettlementSite::Oasis ? DESERT : PLAIN),true,false,false);
+            static_cast<std::uint8_t>(site==SettlementSite::Oasis ? DESERT : PLAIN),true,false,false,
+            ReadSettlementTerrainOptions(params_));
         outPlan.archetype="village"; outPlan.cityType="village";
         return true;
     }
@@ -43,6 +44,5 @@ bool VillageMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError)
 }
 
 MapGenColor VillageMapImageGenerator::BiomeToColor(std::uint8_t biome) const {
-    TownMapImageGenerator palette(params_);
-    return palette.BiomeToColor(biome);
+    return TownMapImageGenerator::SettlementBiomeColor(biome);
 }

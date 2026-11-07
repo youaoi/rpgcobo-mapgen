@@ -614,6 +614,10 @@ Point NearestFootprintPoint(
 TownMapImageGenerator::TownMapImageGenerator(MapGenParams params) : MapImageGenerator(std::move(params)) {}
 
 MapGenColor TownMapImageGenerator::BiomeToColor(std::uint8_t biome) const {
+    return SettlementBiomeColor(biome);
+}
+
+MapGenColor TownMapImageGenerator::SettlementBiomeColor(std::uint8_t biome) {
     switch (biome) {
         case PLAIN:      return {104, 146, 86};
         case DESERT:     return {196, 168, 103};
@@ -646,7 +650,8 @@ bool TownMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError) {
         std::vector<std::uint8_t> footprint,structure;
         outPlan.biomes.assign(params_.width*params_.depth,PLAIN);
         PrepareSettlementSite(outPlan,footprint,structure,site,rotation,
-            static_cast<std::uint8_t>(site==SettlementSite::Oasis?DESERT:PLAIN),false,false,false);
+            static_cast<std::uint8_t>(site==SettlementSite::Oasis?DESERT:PLAIN),false,false,false,
+            ReadSettlementTerrainOptions(params_));
         outPlan.archetype="urban_growth";
         outPlan.cityType=TownCityTypeName(ChooseCityType(params_));
         return true;
@@ -787,7 +792,8 @@ bool TownMapImageGenerator::Generate(MapPlan& outPlan, std::string& outError) {
                 static_cast<double>(CandidateSeed(params_.seed, 1201) % 10000U) / 10000.0 < waterChance);
         const bool optionalPond = (site == SettlementSite::Plains || site == SettlementSite::Forest) &&
             static_cast<double>(CandidateSeed(params_.seed, 1203) % 10000U) / 10000.0 < waterChance;
-        PrepareSettlementSite(candidate, footprint, structure, site, siteRotation, groundTile, villageLayout, optionalRiver, optionalPond);
+        PrepareSettlementSite(candidate, footprint, structure, site, siteRotation, groundTile, villageLayout,
+            optionalRiver, optionalPond, ReadSettlementTerrainOptions(params_));
         const int footprintCells = std::accumulate(footprint.begin(), footprint.end(), 0);
         if (footprintCells < area / 8) continue;
         int buildableLand = 0;

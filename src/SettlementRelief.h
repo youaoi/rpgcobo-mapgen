@@ -4,7 +4,7 @@
 #include <cmath>
 #include <queue>
 
-// Erode dry banks towards the fixed water level (base ground minus one).
+// Grade dry banks towards the water and taper the exposed edges of cliffs.
 // Independent of uplift: even a flat settlement needs a low water's edge.
 inline void ApplySettlementShore(MapPlan& plan) {
     const int w=plan.width,d=plan.depth,n=w*d;
@@ -24,33 +24,48 @@ inline void ApplySettlementShore(MapPlan& plan) {
         return distance;
     };
     std::vector<unsigned char> water(n,0),protectedLand(n,0);
-    bool hasWater=false;
+    bool hasWater=false,hasCliff=false;
     for(int i=0;i<n;++i) {
         const int b=plan.biomes[i];
         if(b==7||b==8||b==15) {water[i]=1;hasWater=true;}
+        if(b==16) hasCliff=true;
         if(b==3||b==4||b==5||b==6||(b>=10&&b<=14)||b==18) protectedLand[i]=1;
     }
-    if(!hasWater) return;
+    if(!hasWater&&!hasCliff) return;
     for(const auto& r:plan.regions) {
         if(r.kind!="asset_plot" && r.kind!="asset_bridge" && r.kind!="asset_wall" && r.kind!="village_center" && r.kind!="village_open_space" && r.kind!="settlement_facility") continue;
         for(int y=std::max(0,r.y0-2);y<=std::min(d-1,r.y1+2);++y)
             for(int x=std::max(0,r.x0-2);x<=std::min(w-1,r.x1+2);++x) protectedLand[y*w+x]=1;
     }
-    const auto waterDistance=floodDistance(water),structureDistance=floodDistance(protectedLand);
-    int affected=0;
+    const auto waterDistance=hasWater?floodDistance(water):std::vector<int>{};
+    const auto structureDistance=hasWater?floodDistance(protectedLand):std::vector<int>{};
+    std::vector<int> cliffDistance;
+    if(hasCliff) {
+        std::vector<unsigned char> lowGround(n);
+        for(int i=0;i<n;++i) lowGround[i]=plan.biomes[i]!=16;
+        cliffDistance=floodDistance(lowGround);
+    }
+    int erodedCliffs=0,erodedBanks=0;
     for(int i=0;i<n;++i) {
         const int b=plan.biomes[i];
-        if(b!=0&&b!=1&&b!=2&&b!=16&&b!=17) continue;
+        if(protectedLand[i] || (b!=0&&b!=1&&b!=2&&b!=16&&b!=17)) continue;
+        // One height step every two cells removes thin ridges and leaves the
+        // full rock height in the interior of a broad mountain.
+        const int cliffCut=b==16?6-std::min(6,(cliffDistance[i]+1)/2):0;
+        plan.shoreCuts[i]=cliffCut;
+        if(cliffCut) ++erodedCliffs;
+        if(!hasWater) continue;
         // Three cells per vertical block form a broad low bank. Quantization
         // follows the curved shoreline, rather than a vertical retaining wall.
         const int ceiling=(waterDistance[i]-1)/3-1;
         const int uplift=plan.heightOffsets.size()==plan.biomes.size()?plan.heightOffsets[i]:0;
-        const int surface=uplift+(b==16?6:0);
+        const int surface=uplift+(b==16?6:0)-cliffCut;
         const int cut=std::min(std::max(0,surface-ceiling),structureDistance[i]/2);
-        plan.shoreCuts[i]=cut;
-        if(cut) ++affected;
+        plan.shoreCuts[i]+=cut;
+        if(cut) ++erodedBanks;
     }
-    plan.terrainHistory.push_back({"shore_erosion_and_low_banks",affected});
+    if(hasWater) plan.terrainHistory.push_back({"shore_erosion_and_low_banks",erodedBanks});
+    if(hasCliff) plan.terrainHistory.push_back({"cliff_edge_erosion",erodedCliffs});
 }
 
 // Broad overlapping uplifts, bounded by distance to protected infrastructure.

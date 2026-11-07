@@ -105,6 +105,7 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
         return false;
     }
     Point center{-1,-1}; double best=-1e20;
+    auto findCenter=[&](){
     for(int y=plazaSize;y<d-plazaSize;y+=(waterfront?1:2)) for(int x=plazaSize;x<w-plazaSize;x+=(waterfront?1:2)) {
         if(!square(x-plazaSize/2,y-plazaSize/2,plazaSize,true)) continue;
         bool bridgeOverlap=false;
@@ -133,6 +134,34 @@ inline bool Grow(MapPlan& plan,const MapGenParams& params,int attempt,std::strin
         const double score=room*.35-(std::abs(x-w/2)+std::abs(y-d/2))*.6-
             std::min(40,std::abs(waterDistance[y*w+x]-12))*.3+std::uniform_real_distribution<double>(0,8)(rng);
         if(score>best) {best=score;center={x,y};}
+    }
+    };
+    findCenter();
+    if(center.x<0 && waterfront && !plan.settlementMask.empty()) {
+        // A shorter inlet can leave the historic clearing inland. Extend it
+        // over connected dry ground so the plaza can still touch the bank.
+        std::queue<int> fringe;
+        std::vector<int> steps(area,0);
+        for(int i=0;i<area;++i) {
+            if(!plan.settlementMask[i] || !ground(i%w,i/w)) continue;
+            if((i%w>0 && !plan.settlementMask[i-1]) ||
+                (i%w+1<w && !plan.settlementMask[i+1]) ||
+                (i>=w && !plan.settlementMask[i-w]) ||
+                (i+w<area && !plan.settlementMask[i+w])) fringe.push(i);
+        }
+        while(!fringe.empty()) {
+            const int i=fringe.front();fringe.pop();
+            if(steps[i]>=plazaSize*2) continue;
+            for(const Point delta:{Point{-1,0},Point{1,0},Point{0,-1},Point{0,1}}) {
+                const int x=i%w+delta.x,y=i/w+delta.y;
+                if(!ground(x,y) || plan.settlementMask[y*w+x]) continue;
+                const int next=y*w+x;
+                plan.settlementMask[next]=1;
+                steps[next]=steps[i]+1;
+                fringe.push(next);
+            }
+        }
+        findCenter();
     }
     if(center.x<0) {error="No dry village center can fit the requested main-road width";return false;}
     plan.regions.clear();plan.markers.clear();

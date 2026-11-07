@@ -64,7 +64,8 @@ inline bool BuildAssetFoundation(MapPlan& plan, const MapGenParams& params, std:
         const std::string key = "asset" + std::to_string(i);
         Asset a{value(key + "Id", -1), value(key + "Width", 0), value(key + "Depth", 0),
             value(key + "Category", 0), value(key + "Rotation", 0)};
-        if(!SettlementBuildingOrientationAllowed(a.w,a.d,a.rotation,value(key+"DoorSide",2),a.category))continue;
+        const int doorSide = value(key + "DoorSide", a.rotation == 0 ? 2 : -1);
+        if(!SettlementBuildingOrientationAllowed(a.w,a.d,a.rotation,doorSide,a.category))continue;
         if (a.id >= 0 && a.w > 0 && a.d > 0) assets.push_back(a);
     }
     if (assets.empty()) { error = "No named construction assets found in map_asset"; return false; }
